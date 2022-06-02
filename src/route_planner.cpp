@@ -37,11 +37,11 @@ float RoutePlanner::CalculateHValue(RouteModel::Node const *node) {
 
 void RoutePlanner::AddNeighbors(RouteModel::Node *current_node) {
     current_node->FindNeighbors();
-    for (auto &node:current_node->neighbors)
+    for (auto *node:current_node->neighbors)
     {
         node->parent = current_node;
         node->h_value = CalculateHValue(node);
-        node->g_value = current_node->g_value + 1;
+        node->g_value = current_node->g_value + current_node->distance(*node);
         open_list.push_back(node);
         node->visited = true;
     }
@@ -57,9 +57,9 @@ void RoutePlanner::AddNeighbors(RouteModel::Node *current_node) {
 
 RouteModel::Node *RoutePlanner::NextNode() {
 
-    std::sort(open_list.begin(), open_list.end(), [](RouteModel::Node a, RouteModel::Node b) 
+    std::sort(open_list.begin(), open_list.end(), [](RouteModel::Node* a, RouteModel::Node* b) 
     {
-        return (a.g_value + a.h_value) < (b.g_value + b.h_value);
+        return (a->g_value + a->h_value) < (b->g_value + b->h_value);
     });
 
     RouteModel::Node * bestNode = open_list.front();
@@ -85,17 +85,14 @@ std::vector<RouteModel::Node> RoutePlanner::ConstructFinalPath(RouteModel::Node 
 
     // TODO: Implement your solution here.
 
-    path_found.push_back(*current_node);
 
-    while (current_node != start_node)
+    while (current_node!=start_node)
     {
-    AddNeighbors(current_node);
-    current_node = NextNode();
     distance += current_node->distance(*current_node->parent);
     path_found.push_back(*current_node);
+    current_node = current_node->parent;
     }
-
-    distance += current_node->distance(*current_node->parent);
+ 
     path_found.push_back(*start_node);
     std::reverse(path_found.begin(), path_found.end());
 
@@ -113,8 +110,17 @@ std::vector<RouteModel::Node> RoutePlanner::ConstructFinalPath(RouteModel::Node 
 // - Store the final path in the m_Model.path attribute before the method exits. This path will then be displayed on the map tile.
 
 void RoutePlanner::AStarSearch() {
-    RouteModel::Node *current_node = nullptr;
+    RouteModel::Node *current_node = start_node;
+    start_node->visited=true;
+    open_list.push_back(current_node);
 
     // TODO: Implement your solution here.
+    while (!open_list.empty())
+    {
+        AddNeighbors(current_node);
+        current_node = NextNode();
+    }
+    
+    m_Model.path = ConstructFinalPath(end_node);
 
 }
