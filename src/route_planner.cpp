@@ -11,9 +11,8 @@ RoutePlanner::RoutePlanner(RouteModel &model, float start_x, float start_y, floa
     // TODO 2: Use the m_Model.FindClosestNode method to find the closest nodes to the starting and ending coordinates.
     // Store the nodes you find in the RoutePlanner's start_node and end_node attributes.
 
-    float start_x, start_y, end_x, end_y;
-    std::cin >> start_x >> start_y >> end_x >> end_y;
-
+    RoutePlanner::start_node =  & m_Model.FindClosestNode(start_x, start_y);
+    RoutePlanner::end_node =  & m_Model.FindClosestNode(end_x, end_y);
 }
 
 
@@ -37,7 +36,15 @@ float RoutePlanner::CalculateHValue(RouteModel::Node const *node) {
 // - For each node in current_node.neighbors, add the neighbor to open_list and set the node's visited attribute to true.
 
 void RoutePlanner::AddNeighbors(RouteModel::Node *current_node) {
-
+    current_node->FindNeighbors();
+    for (auto &node:current_node->neighbors)
+    {
+        node->parent = current_node;
+        node->h_value = CalculateHValue(node);
+        node->g_value = current_node->g_value + 1;
+        open_list.push_back(node);
+        node->visited = true;
+    }
 }
 
 
@@ -50,6 +57,16 @@ void RoutePlanner::AddNeighbors(RouteModel::Node *current_node) {
 
 RouteModel::Node *RoutePlanner::NextNode() {
 
+    std::sort(open_list.begin(), open_list.end(), [](RouteModel::Node a, RouteModel::Node b) 
+    {
+        return (a.g_value + a.h_value) < (b.g_value + b.h_value);
+    });
+
+    RouteModel::Node * bestNode = open_list.front();
+
+    open_list.erase(open_list.begin());
+
+    return bestNode;
 }
 
 
